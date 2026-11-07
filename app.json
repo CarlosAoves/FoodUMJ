@@ -1,0 +1,9 @@
+{
+  "expo": {
+    "name": "FoodUMJ",
+    "slug": "foodumj",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light"
+  }
+}

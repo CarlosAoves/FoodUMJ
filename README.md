@@ -25,10 +25,10 @@ Na versão atual, toque em **Frango** para abrir os resultados e depois em **Abr
 
 Edite `src/screens/ResultsScreen.js` e crie `src/services/searchRecipes.js`.
 
-- [ ] Implemente `searchRecipes(query)` para buscar pelo nome na TheMealDB. Codifique o termo com `encodeURIComponent`, confira o status HTTP e transforme `meals: null` em uma lista vazia. Converta cada receita para `{ id, name, imageUrl }` usando `idMeal`, `strMeal` e `strMealThumb`.
-- [ ] Use `useState` para guardar os resultados e controlar carregamento e erro. Mostre uma indicação durante a consulta, uma mensagem quando a busca voltar vazia e **Tentar novamente** quando a consulta falhar.
-- [ ] Mantenha `displayQuery` como o texto mostrado na tela. A tela inicial já converte **Frango**, **Macarrão** e **Sopa** para os termos do catálogo. Defina no serviço como tratar outros termos em português e documente os termos atendidos caso use um mapeamento.
-- [ ] Substitua o botão de exemplo por uma lista com nome e imagem. Ao tocar em uma receita, abra `Details` com `{ id: recipe.id }`.
+- [x] Implemente `searchRecipes(query)` para buscar pelo nome na TheMealDB. Codifique o termo com `encodeURIComponent`, confira o status HTTP e transforme `meals: null` em uma lista vazia. Converta cada receita para `{ id, name, imageUrl }` usando `idMeal`, `strMeal` e `strMealThumb`.
+- [x] Use `useState` para guardar os resultados e controlar carregamento e erro. Mostre uma indicação durante a consulta, uma mensagem quando a busca voltar vazia e **Tentar novamente** quando a consulta falhar.
+- [x] Mantenha `displayQuery` como o texto mostrado na tela. A tela inicial já converte **Frango**, **Macarrão** e **Sopa** para os termos do catálogo. Defina no serviço como tratar outros termos em português e documente os termos atendidos caso use um mapeamento.
+- [x] Substitua o botão de exemplo por uma lista com nome e imagem. Ao tocar em uma receita, abra `Details` com `{ id: recipe.id }`.
 
 Para testar, pesquise `frango` e abra uma das receitas da lista. Faça uma busca sem correspondência e simule uma falha de conexão para conferir se o aplicativo mostra a mensagem certa em cada caso.
 

@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import Screen from '../components/Screen';
 import { getRecipeById } from '../services/getRecipeById';
@@ -22,6 +30,7 @@ function RecipeDetails({ id }) {
   const [loading, setLoading] = useState(id !== null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
     if (id === null) return;
@@ -91,24 +100,71 @@ function RecipeDetails({ id }) {
     );
   }
 
+  const imageUrl = typeof recipe.imageUrl === 'string' ? recipe.imageUrl.trim() : '';
+  const showImage = !imageFailed && /^https?:\/\/[a-z0-9.-]+(?::\d+)?(?:[/?#]\S*)?$/i.test(imageUrl);
+
   return (
-    <View style={styles.header}>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.detailsContent}>
       <Text accessibilityRole="header" style={styles.title}>
         {recipe.name}
       </Text>
-      <Text style={styles.message}>Os detalhes da receita foram carregados.</Text>
-    </View>
+      <View style={styles.imageFrame}>
+        {showImage ? (
+          <Image
+            accessible
+            accessibilityRole="image"
+            accessibilityLabel={`Foto de ${recipe.name}`}
+            source={{ uri: imageUrl }}
+            resizeMode="cover"
+            style={styles.image}
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <Text style={styles.placeholderText}>Imagem indisponível.</Text>
+          </View>
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    gap: 4,
+  scroll: {
+    flex: 1,
+  },
+  detailsContent: {
+    width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
+    gap: 16,
+    paddingBottom: 16,
   },
   title: {
     color: colors.text,
     fontSize: 26,
     fontWeight: '800',
+  },
+  imageFrame: {
+    width: '100%',
+    aspectRatio: 4 / 3,
+    backgroundColor: colors.tint,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  imagePlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  placeholderText: {
+    color: colors.muted,
+    textAlign: 'center',
   },
   centerBox: {
     flex: 1,

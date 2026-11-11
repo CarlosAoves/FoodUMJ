@@ -103,6 +103,10 @@ function RecipeDetails({ id }) {
   const imageUrl = typeof recipe.imageUrl === 'string' ? recipe.imageUrl.trim() : '';
   const showImage = !imageFailed && /^https?:\/\/[a-z0-9.-]+(?::\d+)?(?:[/?#]\S*)?$/i.test(imageUrl);
 
+  const ingredients = Array.isArray(recipe.ingredients)
+    ? recipe.ingredients.filter((ingredient) => typeof ingredient?.name === 'string' && ingredient.name.trim())
+    : [];
+
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.detailsContent}>
       <Text accessibilityRole="header" style={styles.title}>
@@ -122,6 +126,25 @@ function RecipeDetails({ id }) {
         ) : (
           <View style={styles.imagePlaceholder}>
             <Text style={styles.placeholderText}>Imagem indisponível.</Text>
+          </View>
+        )}
+      </View>
+      <View style={styles.ingredientsSection}>
+        <Text accessibilityRole="header" style={styles.sectionTitle}>
+          Ingredientes
+        </Text>
+        {ingredients.length === 0 ? (
+          <Text style={styles.message}>Ingredientes não disponíveis para esta receita.</Text>
+        ) : (
+          <View style={styles.ingredientList}>
+            {ingredients.map(({ name, measure }, index) => (
+              <View key={`${name}-${index}`} style={styles.ingredient}>
+                <Text style={styles.ingredientName}>{name}</Text>
+                {typeof measure === 'string' && measure.trim() !== '' && (
+                  <Text style={styles.message}>{measure}</Text>
+                )}
+              </View>
+            ))}
           </View>
         )}
       </View>
@@ -165,6 +188,30 @@ const styles = StyleSheet.create({
   placeholderText: {
     color: colors.muted,
     textAlign: 'center',
+  },
+  ingredientsSection: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  sectionTitle: {
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  ingredientList: {
+    gap: 12,
+  },
+  ingredient: {
+    gap: 2,
+  },
+  ingredientName: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '600',
   },
   centerBox: {
     flex: 1,

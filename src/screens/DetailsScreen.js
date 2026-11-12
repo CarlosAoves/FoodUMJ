@@ -10,8 +10,12 @@ import {
 } from 'react-native';
 
 import Screen from '../components/Screen';
+import { RECIPE_LANGUAGE, recipeMessages } from '../i18n/recipeLocale';
 import { getRecipeById } from '../services/getRecipeById';
+import { translateRecipe } from '../services/translateRecipe';
 import { colors } from '../theme';
+
+const messages = recipeMessages[RECIPE_LANGUAGE];
 
 export default function DetailsScreen({ route }) {
   const id = route.params?.id;
@@ -30,7 +34,6 @@ function RecipeDetails({ id }) {
   const [loading, setLoading] = useState(id !== null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
     if (id === null) return;
@@ -62,29 +65,22 @@ function RecipeDetails({ id }) {
   }
 
   if (loading) {
-    return (
-      <View style={styles.centerBox}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text accessibilityLiveRegion="polite" style={styles.message}>
-          Carregando receita...
-        </Text>
-      </View>
-    );
+    return <RecipeLoading message={messages.loading} />;
   }
 
   if (error) {
     return (
       <View style={styles.feedbackCard}>
         <Text accessibilityRole="alert" style={styles.errorTitle}>
-          Não foi possível carregar a receita.
+          {messages.loadError}
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Tentar novamente"
+          accessibilityLabel={messages.retry}
           onPress={retry}
           style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}
         >
-          <Text style={styles.retryButtonText}>Tentar novamente</Text>
+          <Text style={styles.retryButtonText}>{messages.retry}</Text>
         </Pressable>
       </View>
     );
@@ -94,30 +90,83 @@ function RecipeDetails({ id }) {
     return (
       <View style={styles.feedbackCard}>
         <Text accessibilityRole="header" style={styles.emptyTitle}>
-          Receita não encontrada.
+          {messages.notFound}
         </Text>
       </View>
     );
   }
 
+  return <LocalizedRecipe recipe={recipe} />;
+}
+
+function RecipeLoading({ message }) {
+  return (
+    <View style={styles.centerBox}>
+      <ActivityIndicator size="large" color={colors.primary} />
+      <Text accessibilityLiveRegion="polite" style={styles.message}>{message}</Text>
+    </View>
+  );
+}
+
+function LocalizedRecipe({ recipe }) {
+  const [translation, setTranslation] = useState(null);
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    async function localize() {
+      let result;
+      try {
+        result = await translateRecipe(recipe, { signal: controller.signal });
+      } catch {
+        result = { recipe, usedOriginal: true };
+      }
+      if (!controller.signal.aborted) setTranslation(result);
+    }
+
+    localize();
+    return () => controller.abort();
+  }, [recipe]);
+
+  if (!translation) {
+    return <RecipeLoading message={messages.translating} />;
+  }
+
   const imageUrl = typeof recipe.imageUrl === 'string' ? recipe.imageUrl.trim() : '';
   const showImage = !imageFailed && /^https?:\/\/[a-z0-9.-]+(?::\d+)?(?:[/?#]\S*)?$/i.test(imageUrl);
 
-  const ingredients = Array.isArray(recipe.ingredients)
-    ? recipe.ingredients.filter((ingredient) => typeof ingredient?.name === 'string' && ingredient.name.trim())
+  const displayRecipe = translation.recipe ?? recipe;
+  const isPartialTranslation = translation.usedOriginal && (
+    displayRecipe.name !== recipe.name ||
+    displayRecipe.instructions !== recipe.instructions ||
+    (Array.isArray(displayRecipe.ingredients) && displayRecipe.ingredients.some((ingredient, index) => {
+      const originalIngredient = recipe.ingredients?.[index];
+      return ingredient?.name !== originalIngredient?.name || ingredient?.measure !== originalIngredient?.measure;
+    }))
+  );
+  const instructions = typeof displayRecipe.instructions === 'string' ? displayRecipe.instructions : '';
+  const ingredients = Array.isArray(displayRecipe.ingredients)
+    ? displayRecipe.ingredients.filter((ingredient) => typeof ingredient?.name === 'string' && ingredient.name.trim())
     : [];
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.detailsContent}>
       <Text accessibilityRole="header" style={styles.title}>
-        {recipe.name}
+        {displayRecipe.name}
       </Text>
+      {translation.usedOriginal && (
+        <Text accessibilityLiveRegion="polite" style={styles.message}>
+          {isPartialTranslation
+            ? 'Tradução parcial. Alguns trechos estão no idioma original.'
+            : messages.translationUnavailable}
+        </Text>
+      )}
       <View style={styles.imageFrame}>
         {showImage ? (
           <Image
             accessible
             accessibilityRole="image"
-            accessibilityLabel={`Foto de ${recipe.name}`}
+            accessibilityLabel={messages.imageLabel(displayRecipe.name)}
             source={{ uri: imageUrl }}
             resizeMode="cover"
             style={styles.image}
@@ -125,16 +174,16 @@ function RecipeDetails({ id }) {
           />
         ) : (
           <View style={styles.imagePlaceholder}>
-            <Text style={styles.placeholderText}>Imagem indisponível.</Text>
+            <Text style={styles.placeholderText}>{messages.imageUnavailable}</Text>
           </View>
         )}
       </View>
-      <View style={styles.ingredientsSection}>
+      <View style={styles.detailSection}>
         <Text accessibilityRole="header" style={styles.sectionTitle}>
-          Ingredientes
+          {messages.ingredients}
         </Text>
         {ingredients.length === 0 ? (
-          <Text style={styles.message}>Ingredientes não disponíveis para esta receita.</Text>
+          <Text style={styles.message}>{messages.ingredientsUnavailable}</Text>
         ) : (
           <View style={styles.ingredientList}>
             {ingredients.map(({ name, measure }, index) => (
@@ -146,6 +195,16 @@ function RecipeDetails({ id }) {
               </View>
             ))}
           </View>
+        )}
+      </View>
+      <View style={styles.detailSection}>
+        <Text accessibilityRole="header" style={styles.sectionTitle}>
+          {messages.instructions}
+        </Text>
+        {instructions.trim() ? (
+          <Text style={styles.instructionsText}>{instructions}</Text>
+        ) : (
+          <Text style={styles.message}>{messages.instructionsUnavailable}</Text>
         )}
       </View>
     </ScrollView>
@@ -189,7 +248,7 @@ const styles = StyleSheet.create({
     color: colors.muted,
     textAlign: 'center',
   },
-  ingredientsSection: {
+  detailSection: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,
@@ -201,6 +260,11 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 20,
     fontWeight: '700',
+  },
+  instructionsText: {
+    color: colors.text,
+    fontSize: 16,
+    lineHeight: 24,
   },
   ingredientList: {
     gap: 12,

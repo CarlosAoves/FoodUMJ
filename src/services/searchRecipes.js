@@ -1,3 +1,5 @@
+import { RECIPE_LANGUAGE } from '../i18n/recipeLocale.js';
+import { translateRecipeTitles } from './translateRecipe.js';
 import { translateText } from './translationService.js';
 
 /**
@@ -44,7 +46,7 @@ const BASE_URL = 'https://www.themealdb.com/api/json/v1/1/search.php?s=';
 export function translateQuery(term) {
   if (!term || typeof term !== 'string') return '';
   const normalized = term.trim().toLowerCase();
-  return PORTUGUESE_TERMS_MAP[normalized] ?? normalized;
+  return Object.hasOwn(PORTUGUESE_TERMS_MAP, normalized) ? PORTUGUESE_TERMS_MAP[normalized] : normalized;
 }
 
 /**
@@ -58,17 +60,11 @@ export async function resolveSearchTerm(term) {
   if (!term || typeof term !== 'string') return '';
   const normalized = term.trim().toLowerCase();
 
-  if (PORTUGUESE_TERMS_MAP[normalized]) {
+  if (Object.hasOwn(PORTUGUESE_TERMS_MAP, normalized)) {
     return PORTUGUESE_TERMS_MAP[normalized];
   }
 
-  // Tenta traduzir termos adicionais digitados pelo usuário (ex: cenoura, morango, etc.)
-  try {
-    const translated = await translateText(normalized, 'pt-BR', 'en');
-    return translated || normalized;
-  } catch {
-    return normalized;
-  }
+  return translateText(normalized, RECIPE_LANGUAGE, 'en');
 }
 
 /**
@@ -94,27 +90,18 @@ export async function searchRecipes(query) {
   const data = await response.json();
 
   // A TheMealDB retorna { meals: null } quando nenhuma receita é encontrada
-  if (!data || !data.meals) {
+  if (data?.meals === null) {
     return [];
   }
 
-  // Converte para o padrão acordado { id, name, imageUrl } e traduz os nomes em paralelo com fallback
-  const recipesWithTranslation = await Promise.all(
-    data.meals.map(async (meal) => {
-      let translatedName = meal.strMeal;
-      try {
-        translatedName = await translateText(meal.strMeal, 'en', 'pt-BR');
-      } catch {
-        translatedName = meal.strMeal;
-      }
+  if (!Array.isArray(data?.meals)) {
+    throw new Error('Resposta inválida da API de receitas.');
+  }
 
-      return {
-        id: meal.idMeal,
-        name: translatedName || meal.strMeal,
-        imageUrl: meal.strMealThumb,
-      };
-    })
-  );
-
-  return recipesWithTranslation;
+  const names = await translateRecipeTitles(data.meals.map((meal) => meal.strMeal));
+  return data.meals.map((meal, index) => ({
+    id: meal.idMeal,
+    name: names[index] || meal.strMeal,
+    imageUrl: meal.strMealThumb,
+  }));
 }

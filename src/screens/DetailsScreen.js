@@ -151,9 +151,23 @@ function LocalizedRecipe({ recipe }) {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.detailsContent}>
-      <Text accessibilityRole="header" style={styles.title}>
-        {displayRecipe.name}
-      </Text>
+      <View style={styles.titleRow}>
+        <Text accessibilityRole="header" style={styles.title}>
+          {displayRecipe.name}
+        </Text>
+        {/* Conectar ao FavoritesContext quando disponível, usando recipe.id, recipe.name e recipe.imageUrl. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Favoritar receita"
+          accessibilityState={{ disabled: true }}
+          disabled
+          style={styles.favoriteButton}
+        >
+          <Text accessible={false} allowFontScaling={false} style={styles.favoriteIcon}>
+            ♡
+          </Text>
+        </Pressable>
+      </View>
       {translation.usedOriginal && (
         <Text accessibilityLiveRegion="polite" style={styles.message}>
           {isPartialTranslation
@@ -222,10 +236,32 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingBottom: 16,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
   title: {
+    flex: 1,
+    minWidth: 0,
     color: colors.text,
     fontSize: 26,
     fontWeight: '800',
+  },
+  favoriteButton: {
+    width: 48,
+    height: 48,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.tint,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 24,
+  },
+  favoriteIcon: {
+    color: colors.muted,
+    fontSize: 26,
   },
   imageFrame: {
     width: '100%',

@@ -1,6 +1,8 @@
+import { translateText } from './translationService.js';
+
 /**
  * Dicionário de termos comuns em português mapeados para o catálogo da TheMealDB.
- * Permite que o usuário pesquise ingredientes e pratos em português.
+ * Permite que o usuário pesquise ingredientes e pratos em português de forma instantânea.
  */
 export const PORTUGUESE_TERMS_MAP = {
   frango: 'chicken',
@@ -34,7 +36,8 @@ export const PORTUGUESE_TERMS_MAP = {
 const BASE_URL = 'https://www.themealdb.com/api/json/v1/1/search.php?s=';
 
 /**
- * Traduz termos conhecidos em português ou retorna o termo original.
+ * Traduz termos conhecidos via mapa estático (0ms).
+ * Mantido para compatibilidade síncrona.
  * @param {string} term
  * @returns {string}
  */
@@ -45,13 +48,37 @@ export function translateQuery(term) {
 }
 
 /**
- * Busca receitas na TheMealDB por nome.
+ * Resolve o termo de busca para inglês:
+ * 1. Primeiro verifica o mapa estático em português (instantâneo).
+ * 2. Caso não esteja no mapa, traduz dinamicamente pt-BR -> en via MyMemory API.
+ * @param {string} term
+ * @returns {Promise<string>}
+ */
+export async function resolveSearchTerm(term) {
+  if (!term || typeof term !== 'string') return '';
+  const normalized = term.trim().toLowerCase();
+
+  if (PORTUGUESE_TERMS_MAP[normalized]) {
+    return PORTUGUESE_TERMS_MAP[normalized];
+  }
+
+  // Tenta traduzir termos adicionais digitados pelo usuário (ex: cenoura, morango, etc.)
+  try {
+    const translated = await translateText(normalized, 'pt-BR', 'en');
+    return translated || normalized;
+  } catch {
+    return normalized;
+  }
+}
+
+/**
+ * Busca receitas na TheMealDB por nome e traduz os títulos retornados para português.
  * 
- * @param {string} query - Termo de busca (em inglês ou português)
+ * @param {string} query - Termo de busca (em português ou inglês)
  * @returns {Promise<Array<{ id: string, name: string, imageUrl: string }>>}
  */
 export async function searchRecipes(query) {
-  const searchTerm = translateQuery(query);
+  const searchTerm = await resolveSearchTerm(query);
 
   if (!searchTerm) {
     return [];
@@ -71,10 +98,23 @@ export async function searchRecipes(query) {
     return [];
   }
 
-  // Converte para o padrão de resumo acordado: { id, name, imageUrl }
-  return data.meals.map((meal) => ({
-    id: meal.idMeal,
-    name: meal.strMeal,
-    imageUrl: meal.strMealThumb,
-  }));
+  // Converte para o padrão acordado { id, name, imageUrl } e traduz os nomes em paralelo com fallback
+  const recipesWithTranslation = await Promise.all(
+    data.meals.map(async (meal) => {
+      let translatedName = meal.strMeal;
+      try {
+        translatedName = await translateText(meal.strMeal, 'en', 'pt-BR');
+      } catch {
+        translatedName = meal.strMeal;
+      }
+
+      return {
+        id: meal.idMeal,
+        name: translatedName || meal.strMeal,
+        imageUrl: meal.strMealThumb,
+      };
+    })
+  );
+
+  return recipesWithTranslation;
 }

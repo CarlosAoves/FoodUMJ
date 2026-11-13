@@ -47,10 +47,10 @@ Enquanto a lista real estiver em desenvolvimento, use **Abrir detalhe de exemplo
 
 Crie `src/context/FavoritesContext.js` e edite `src/screens/FavoritesScreen.js`.
 
-- [ ] Crie `FavoritesProvider` com uma lista inicialmente vazia em `useState` e exponha `useFavorites()` com `useContext`. O hook deve retornar `favorites`, `isFavorite(id)` e `toggleFavorite(recipe)`.
-- [ ] Em `toggleFavorite`, atualize a lista anterior pelo ID. Se o ID já estiver na lista, remova o item. Se for novo, adicione o resumo da receita. O estado fica no provider durante a sessão do app.
-- [ ] Mostre um estado vazio e uma lista com nome e imagem das receitas salvas. Permita abrir `Details` com `{ id: recipe.id }` e remover uma receita diretamente da lista.
-- [ ] Combine com o integrante 1 a inclusão de `FavoritesProvider` em `App.js`, envolvendo as quatro telas. Avise o integrante 3 assim que o hook e o provider estiverem disponíveis para a integração.
+- [X] Crie `FavoritesProvider` com uma lista inicialmente vazia em `useState` e exponha `useFavorites()` com `useContext`. O hook deve retornar `favorites`, `isFavorite(id)` e `toggleFavorite(recipe)`.
+- [X] Em `toggleFavorite`, atualize a lista anterior pelo ID. Se o ID já estiver na lista, remova o item. Se for novo, adicione o resumo da receita. O estado fica no provider durante a sessão do app.
+- [X] Mostre um estado vazio e uma lista com nome e imagem das receitas salvas. Permita abrir `Details` com `{ id: recipe.id }` e remover uma receita diretamente da lista.
+- [X] Combine com o integrante 1 a inclusão de `FavoritesProvider` em `App.js`, envolvendo as quatro telas. Avise o integrante 3 assim que o hook e o provider estiverem disponíveis para a integração.
 
 Adicione uma receita pela tela de detalhes e confira se ela aparece uma única vez em **Ver favoritas**. Abra a receita pela lista e volte para removê-la. Ao abrir os detalhes de novo pelos resultados, o botão deve voltar a mostrar **Adicionar às favoritas**.
 

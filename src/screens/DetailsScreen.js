@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import Screen from '../components/Screen';
+import { useFavorites } from '../context/FavoritesContext';
 import { RECIPE_LANGUAGE, recipeMessages } from '../i18n/recipeLocale';
 import { getRecipeById } from '../services/getRecipeById';
 import { translateRecipe } from '../services/translateRecipe';
@@ -111,6 +112,9 @@ function RecipeLoading({ message }) {
 function LocalizedRecipe({ recipe }) {
   const [translation, setTranslation] = useState(null);
   const [imageFailed, setImageFailed] = useState(false);
+  
+  // Consumindo o contexto de favoritos criado por você (Integrante 4)
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -149,22 +153,27 @@ function LocalizedRecipe({ recipe }) {
     ? displayRecipe.ingredients.filter((ingredient) => typeof ingredient?.name === 'string' && ingredient.name.trim())
     : [];
 
+  const isFav = isFavorite(recipe.id);
+
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.detailsContent}>
       <View style={styles.titleRow}>
         <Text accessibilityRole="header" style={styles.title}>
           {displayRecipe.name}
         </Text>
-        {/* Conectar ao FavoritesContext quando disponível, usando recipe.id, recipe.name e recipe.imageUrl. */}
+        {/* Botão de Favorito conectado ao FavoritesContext */}
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Favoritar receita"
-          accessibilityState={{ disabled: true }}
-          disabled
-          style={styles.favoriteButton}
+          accessibilityLabel={isFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+          onPress={() => toggleFavorite({
+            id: recipe.id,
+            name: displayRecipe.name,
+            imageUrl: imageUrl,
+          })}
+          style={({ pressed }) => [styles.favoriteButton, pressed && styles.pressed]}
         >
-          <Text accessible={false} allowFontScaling={false} style={styles.favoriteIcon}>
-            ♡
+          <Text accessible={false} allowFontScaling={false} style={[styles.favoriteIcon, isFav && styles.favoriteIconActive]}>
+            {isFav ? '♥' : '♡'}
           </Text>
         </Pressable>
       </View>
@@ -262,6 +271,9 @@ const styles = StyleSheet.create({
   favoriteIcon: {
     color: colors.muted,
     fontSize: 26,
+  },
+  favoriteIconActive: {
+    color: colors.primary,
   },
   imageFrame: {
     width: '100%',
